@@ -15,7 +15,7 @@ const openai = new OpenAI({
 });
 
 const instruction = `You're going to receive a text that represent a bank statement. Your task is to extract the following information from the text:
-    Search for any table that contains relevant information about the bank statement.
+    Search for any table that contains relevant information about the bank statement. If the statement is on other language, return the table in that language using the same format.
     
     For example:
 
