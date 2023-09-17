@@ -14,7 +14,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const instruction = `You're going to receive a text that represent a bank statement. Your task is to extract the following information from the text:
+const instruction = `
+    You're going to receive a text that represent a bank statement. Your task is to extract the following information from the text:
     Search for any table that contains relevant information about the bank statement. If the statement is on other language, return the table in that language using the same format.
     
     For example:
@@ -30,18 +31,23 @@ const instruction = `You're going to receive a text that represent a bank statem
 
     If there's a total amount (sum of certain column) in the table, please return it as well.
     You could append it as the last row, with other values as empty strings if needed.
+    Organize the table in a way that makes sense. Include the total values in the same row or in a separate row.
+
+    ---
 
     Always include a two-column table called "Information" with data about the bank statement and the holder of the account.
     The first column should be the name of the field and the second column should be the value. The table should be in the same format as the other tables.
     The table should be the first table in the JSON format. If fields are missing, don't include them in the table.
 
     Some of the fields that you should include are:
-    - Account Number
-    - Account Holder
-    - Address
-    - Bank Name
-    - Statement Date (or Period)
+    - Account Number (account number, account id, primary account number, etc.)
+    - Account Holder (account holder, account name, etc.)
+    - Address (address, address line, etc.)
+    - Bank Name (bank name, bank, etc.)
+    - Statement Date (or Period) (statement date, statement period, etc.)
     - Total Amount (if there's a total amount in the table). E.g: Total Deposits, Total Withdrawals, etc.
+
+    ---
 `;
 
 const functions: ChatCompletionCreateParams.Function[] = [
@@ -95,10 +101,7 @@ export const getStatement = async (req: Request, res: Response) => {
   const { content }: RequestBody = req.body;
 
   const messages: ChatCompletionMessage[] = [
-    {
-      role: "system",
-      content: instruction,
-    },
+    { role: "system", content: instruction },
   ];
 
   messages.push({

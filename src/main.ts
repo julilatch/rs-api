@@ -11,6 +11,8 @@ const origins = [
   "http://localhost:3000",
   "http://localhost:8000",
   "https://rock-statements.vercel.app",
+  "https://www.rocketstatements.com",
+  "https://rocketstatements.com",
 ];
 
 const app = express();
