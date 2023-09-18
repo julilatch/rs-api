@@ -25,12 +25,28 @@ const instruction = `
     Withdrawals.
     Other credits.
     Transactions.
+    Interest to Pay.
+    Interest Paid.
+    Fees.
+    Other Debits.
+    Total Deposits.
+    Total Withdrawals.
+    Total Other Credits.
+    Total Transactions.
+    Total Interest to Pay.
+    Total Interest Paid.
+    Total Fees.
+    Total Other Debits.
+    Total Amount.
+
 
     Your task is return the table in a JSON format. The goal is to extract the information from the text and return it in a structured format.
     To be able to export as csv, xlsx or proper json.
 
     If there's a total amount (sum of certain column) in the table, please return it as well.
     You could append it as the last row, with other values as empty strings if needed.
+    
+    If the value is 0 or 0.00, return it as well, include all the values in the table.
     Organize the table in a way that makes sense. Include the total values in the same row or in a separate row.
 
     ---
