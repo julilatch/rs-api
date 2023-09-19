@@ -10,7 +10,7 @@ import AiRoutes from "./routes/ai.route";
 const origins = [
   "http://localhost:3000",
   "http://localhost:8000",
-  "https://rock-statements.vercel.app",
+  "https://rocketstatements.vercel.app",
   "https://www.rocketstatements.com",
   "https://rocketstatements.com",
 ];
@@ -21,11 +21,10 @@ app.use(cors({ origin: origins }));
 app.use(morgan("dev"));
 app.use(express.json());
 
-
 const port = process.env.PORT || 8000;
 
 app.get("/", (req, res) => {
-  res.json({ message: "RS API" });
+  res.json({ message: `RS API - Welcome` });
 });
 
 app.use("/api/v1/ai", AiRoutes);
