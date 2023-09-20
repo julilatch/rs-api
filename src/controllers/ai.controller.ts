@@ -70,8 +70,6 @@ const instruction = `
     If the value is 0 or 0.00, return it as well, include all the values in the table.
     Organize the table in a way that makes sense. Include the total values in the same row or in a separate row.
 
-    ---
-
     Always include a two-column table called "Information" with data about the bank statement and the holder of the account.
     The first column should be the name of the field and the second column should be the value. The table should be in the same format as the other tables.
     The table should be the first table in the JSON format. If fields are missing, don't include them in the table.
@@ -83,7 +81,6 @@ const instruction = `
     - Bank Name (bank name, bank, etc.)
     - Statement Date (or Period) (statement date, statement period, etc.)
     - Total Amount (if there's a total amount in the table). E.g: Total Deposits, Total Withdrawals, etc.
-    ---
 `;
 
 const functions: ChatCompletionCreateParams.Function[] = [
