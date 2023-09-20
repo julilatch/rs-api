@@ -38,7 +38,28 @@ const instruction = `
     Total Fees.
     Total Other Debits.
     Total Amount.
+    Transaction Date
+    Transaction Description
+    Transaction Type
+    Transaction Amount
+    Running Balance
 
+    Account Features/Status:
+
+    Account Type (e.g., Savings, Checking, Business)
+    Account Status (e.g., Active, Suspended)
+    Linked Accounts
+    
+    Additional Information:
+
+    Notes or Remarks
+    Branch Information
+
+    Other Fees & Charges:
+
+    Monthly Service Fee
+    ATM Fee
+    Transfer Fee
 
     Your task is return the table in a JSON format. The goal is to extract the information from the text and return it in a structured format.
     To be able to export as csv, xlsx or proper json.
@@ -62,7 +83,6 @@ const instruction = `
     - Bank Name (bank name, bank, etc.)
     - Statement Date (or Period) (statement date, statement period, etc.)
     - Total Amount (if there's a total amount in the table). E.g: Total Deposits, Total Withdrawals, etc.
-
     ---
 `;
 
@@ -129,7 +149,7 @@ export const getStatement = async (req: Request, res: Response) => {
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo-16k",
       messages,
-      temperature: 0.2,
+      temperature: 0.1,
       functions,
     });
 
