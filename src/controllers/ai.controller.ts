@@ -81,6 +81,15 @@ const instruction = `
     - Bank Name (bank name, bank, etc.)
     - Statement Date (or Period) (statement date, statement period, etc.)
     - Total Amount (if there's a total amount in the table). E.g: Total Deposits, Total Withdrawals, etc.
+
+    Example:
+    Field | Value
+    Account Number | 123456789
+    Account Holder | John Doe
+    Address | 123 Main Street
+    Bank Name | Bank of America
+    Statement Date | 2021-01-01 to 2021-01-31
+    Total Amount | $1000.00
 `;
 
 const functions: ChatCompletionCreateParams.Function[] = [
