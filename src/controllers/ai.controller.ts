@@ -1,173 +1,76 @@
 import { Request, Response } from "express";
 
-import OpenAI from "openai";
 import {
-  ChatCompletionCreateParams,
-  ChatCompletionMessage,
-} from "openai/resources/chat/index";
+  AnalyzeDocumentCommand,
+  AnalyzeDocumentCommandInput,
+  TextractClient,
+} from "@aws-sdk/client-textract"
+// @ts-expect-error
+import TextractHelper from "aws-textract-helper"
 
-interface RequestBody {
-  content: string;
-}
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-const instruction = `
-    You're going to receive a text that represent a bank statement. Your task is to extract the following information from the text:
-    Search for any table that contains relevant information about the bank statement. If the statement is on other language, return the table in that language using the same format.
-    
-    For example:
-
-    Account Summary.
-    Deposits.
-    Withdrawals.
-    Other credits.
-    Transactions.
-    Interest to Pay.
-    Interest Paid.
-    Fees.
-    Other Debits.
-    Total Deposits.
-    Total Withdrawals.
-    Total Other Credits.
-    Total Transactions.
-    Total Interest to Pay.
-    Total Interest Paid.
-    Total Fees.
-    Total Other Debits.
-    Total Amount.
-    Transaction Date
-    Transaction Description
-    Transaction Type
-    Transaction Amount
-    Running Balance
-
-    Account Features/Status:
-
-    Account Type (e.g., Savings, Checking, Business)
-    Account Status (e.g., Active, Suspended)
-    Linked Accounts
-    
-    Additional Information:
-
-    Notes or Remarks
-    Branch Information
-
-    Other Fees & Charges:
-
-    Monthly Service Fee
-    ATM Fee
-    Transfer Fee
-
-    Your task is return the table in a JSON format. The goal is to extract the information from the text and return it in a structured format.
-    To be able to export as csv, xlsx or proper json.
-
-    If there's a total amount (sum of certain column) in the table, please return it as well.
-    You could append it as the last row, with other values as empty strings if needed.
-    
-    If the value is 0 or 0.00, return it as well, include all the values in the table.
-    Organize the table in a way that makes sense. Include the total values in the same row or in a separate row.
-
-    Always include a two-column table called "Information" with data about the bank statement and the holder of the account.
-    The first column should be the name of the field and the second column should be the value. The table should be in the same format as the other tables.
-    The table should be the first table in the JSON format. If fields are missing, don't include them in the table.
-
-    Some of the fields that you should include are:
-    - Account Number (account number, account id, primary account number, etc.)
-    - Account Holder (account holder, account name, etc.)
-    - Address (address, address line, etc.)
-    - Bank Name (bank name, bank, etc.)
-    - Statement Date (or Period) (statement date, statement period, etc.)
-    - Total Amount (if there's a total amount in the table). E.g: Total Deposits, Total Withdrawals, etc.
-
-    Example:
-    Field | Value
-    Account Number | 123456789
-    Account Holder | John Doe
-    Address | 123 Main Street
-    Bank Name | Bank of America
-    Statement Date | 2021-01-01 to 2021-01-31
-    Total Amount | $1000.00
-`;
-
-const functions: ChatCompletionCreateParams.Function[] = [
-  {
-    name: "format_tables",
-    description: "Format the tables in the bank statement to a JSON format.",
-    parameters: {
-      type: "object",
-
-      properties: {
-        results: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              table_name: {
-                type: "string",
-              },
-
-              table: {
-                type: "object",
-                properties: {
-                  headers: {
-                    type: "array",
-                    items: {
-                      type: "string",
-                    },
-                  },
-
-                  rows: {
-                    type: "array",
-                    items: {
-                      type: "array",
-                      items: {
-                        type: "string",
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      required: ["results"],
-    },
+const client = new TextractClient({
+  region: "us-east-1",
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
-];
+})
+
 
 export const getStatement = async (req: Request, res: Response) => {
-  const { content }: RequestBody = req.body;
+  const file = req.files?.file;
 
-  const messages: ChatCompletionMessage[] = [
-    { role: "system", content: instruction },
-  ];
+  if(!file) {
+    return res.status(400).json({ message: "No file provided" })
+  }
 
-  messages.push({
-    role: "user",
-    content,
-  });
+  // discard that it's an array
+  if(file instanceof Array) {
+    return res.status(400).json({ message: "Multiple files provided" })
+  }
+  
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo-16k",
-      messages,
-      temperature: 0.1,
-      functions,
-    });
+    console.log("converting file to bytes")
 
-    const usage = response.usage;
-    const content = response.choices[0].message.function_call;
+    const input: AnalyzeDocumentCommandInput = {
+      Document: {
+        Bytes: new Uint8Array(file.data),
+      },
+      FeatureTypes: ["LAYOUT", "TABLES"],
+    }
 
-    console.log("usage format", usage);
+    console.log("sending request to textract")
 
-    return res.json(content).status(200);
+    const command = new AnalyzeDocumentCommand(input)
+    const result = await client.send(command)
+
+    const formattedTables = TextractHelper.createTables(result)
+
+    const tables = formattedTables.map((table: any) => {
+      const tableData = {
+        table_name: "",
+
+        table: {
+          headers: Object.values(table["1"]).map((header) => header),
+
+          // get object value for each object except the first one, which is the headers
+          rows: Object.values(table)
+            .slice(1)
+            .map((row: any) => {
+              return Object.values(row).map((cell) => cell)
+            }),
+        },
+      }
+
+      return tableData
+    })
+
+    // const tables = formatBlocksIntoTables(result.Blocks || [])
+
+    return res.status(200).json({ tables })
   } catch (error) {
-    console.log("error", error);
-
-    return res.json(error).status(500);
+    console.log(error)
+    return res.status(500).json({ error })
   }
 };

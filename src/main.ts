@@ -5,6 +5,7 @@ configDotenv();
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
+import fileUpload from 'express-fileupload'
 import AiRoutes from "./routes/ai.route";
 
 const origins = [
@@ -20,6 +21,10 @@ const app = express();
 app.use(cors({ origin: origins }));
 app.use(morgan("dev"));
 app.use(express.json());
+app.use(fileUpload({
+  // max 1gb
+  limits: { fileSize: 1024 * 1024 * 1024 },
+}));
 
 const port = process.env.PORT || 8000;
 
