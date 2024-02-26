@@ -1,7 +1,5 @@
 import { Request, Response } from "express";
-
-import pdf2img from "pdf-img-convert";
-
+const { fromBuffer } = require("pdf2pic");
 import {
   AnalyzeDocumentCommand,
   AnalyzeDocumentCommandInput,
@@ -44,10 +42,14 @@ export const getStatement = async (req: Request, res: Response) => {
 
   try {
     console.log("converting file to images");
-
-    const images = await pdf2img.convert(file.data, {
-      base64: false,
-    });
+    const baseOptions = {
+      width: 595,
+      height: 892,
+      density: 330,
+    };
+    const images: Buffer[] = await fromBuffer(file.data, baseOptions)
+    .bulk(-1, { responseType: "buffer" })
+    .then((outputs:{ buffer: Buffer }[]) => outputs.map(item => item.buffer))
 
     console.log("sending request to textract");
 
