@@ -65,9 +65,12 @@ export const getStatement = async (req: Request, res: Response) => {
           tables: results,
         } as AiResponse;
       })
-    ).then((res) => toResults(res));
+    )
+      .then((res) => toResults(res))
+      .then((res) => toHash(res));
 
     return res.status(200).json(response);
+
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error });
@@ -177,6 +180,8 @@ const toRawResults = async (images: Buffer[][]) => {
   return results;
 };
 
+
+// UTILITIS
 const toResults = async (results: Results[]) => {
   const rejected = results.filter(
     (result): result is RejectResults => result.status === "rejected"
@@ -193,6 +198,14 @@ const toResults = async (results: Results[]) => {
     .map((result) => result.value)
     .flat();
 };
+
+const toHash = async (results: AiResponse[]) => {
+  const hash: { [key: string]: Results[] } = {};
+  results.forEach(item => {
+    hash[item.fileName] = item.tables;
+  })
+  return hash
+}
 
 const generateArray = (start: number, end: number) => {
   return Array.from({ length: end - start }, (_, index) => start + index);
