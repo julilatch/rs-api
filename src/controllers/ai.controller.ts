@@ -35,7 +35,7 @@ type AiResponse = {
 
 type Results = RejectResults | FullFilledResults;
 const batchSize = 10;
-const imageBatchSize = 50
+const imageBatchSize = 100
 
 export const getStatement = async (req: Request, res: Response) => {
   const files = Array.isArray(req.files?.file)
@@ -54,22 +54,20 @@ export const getStatement = async (req: Request, res: Response) => {
   }
 
   try {
-    const response: any = await Promise.allSettled(
-      files.map(async (file) => {
-        const images: Buffer[][] = await toImages(file);
-        const rawResults: Results[] = await toRawResults(images);
-        const results: Results[] = await toResults(rawResults);
+    const responses = [];
+    for (const file of files) {
+      const images = await toImages(file);
+      const rawResults = await toRawResults(images);
+      const results = await toResults(rawResults);
+  
+      responses.push({
+        fileName: file.name,
+        tables: results,
+      });
+    }
 
-        return {
-          fileName: file.name,
-          tables: results,
-        } as AiResponse;
-      })
-    )
-      .then((res) => toResults(res))
-      .then((res) => toHash(res));
-
-    return res.status(200).json(response);
+    const hashedResults = await toHash(responses);
+    return res.status(200).json(hashedResults);
 
   } catch (error) {
     console.log(error);
@@ -210,3 +208,21 @@ const toHash = async (results: AiResponse[]) => {
 const generateArray = (start: number, end: number) => {
   return Array.from({ length: end - start }, (_, index) => start + index);
 };
+
+// Parallell File Processing
+// Can be Used In the Future
+
+// const response: any = await Promise.allSettled(
+//   files.map(async (file) => {
+//     const images: Buffer[][] = await toImages(file);
+//     const rawResults: Results[] = await toRawResults(images);
+//     const results: Results[] = await toResults(rawResults);
+
+//     return {
+//       fileName: file.name,
+//       tables: results,
+//     } as AiResponse;
+//   })
+// )
+//   .then((res) => toResults(res))
+//   .then((res) => toHash(res));
