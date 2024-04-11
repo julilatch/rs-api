@@ -9,6 +9,7 @@ import {
 } from "@aws-sdk/client-textract";
 // @ts-expect-error
 import TextractHelper from "aws-textract-helper";
+import { UploadFileToWasabi } from "../utils/helpers";
 
 const client = new TextractClient({
   region: "us-east-1",
@@ -34,8 +35,8 @@ type AiResponse = {
 };
 
 type Results = RejectResults | FullFilledResults;
-const batchSize = 10;
-const imageBatchSize = 100
+const batchSize = 20;
+const imageBatchSize = 150
 
 export const getStatement = async (req: Request, res: Response) => {
   const files = Array.isArray(req.files?.file)
@@ -58,7 +59,7 @@ export const getStatement = async (req: Request, res: Response) => {
     for (const file of files) {
       const images = await toImages(file);
       const rawResults = await toRawResults(images);
-      const results = await toResults(rawResults);
+      const results = await toResults(rawResults, file);
   
       responses.push({
         fileName: file.name,
@@ -83,7 +84,7 @@ export const getStatement = async (req: Request, res: Response) => {
 const toImages = async (file: UploadedFile) => {
   console.log("Converting PDF To Images");
 
-  const pdfDoc = await PDFDocument.load(file.data);
+  const pdfDoc = await PDFDocument.load(file.data, { ignoreEncryption: true });
   const numPages = pdfDoc.getPageCount();
   const imagesPromises = [];
 
@@ -180,13 +181,14 @@ const toRawResults = async (images: Buffer[][]) => {
 
 
 // UTILITIS
-const toResults = async (results: Results[]) => {
+const toResults = async (results: Results[], file: UploadedFile) => {
   const rejected = results.filter(
     (result): result is RejectResults => result.status === "rejected"
   );
 
   if (rejected.length > 0) {
     console.error(rejected);
+    await UploadFileToWasabi(file)
   }
 
   return results

@@ -1,3 +1,4 @@
+require('events').EventEmitter.prototype._maxListeners = 100;
 import { configDotenv } from "dotenv";
 
 configDotenv();
