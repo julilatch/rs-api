@@ -104,7 +104,6 @@ const toImages = async (file: UploadedFile) => {
     );
   }
   const images: Buffer[] = (await Promise.all(imagesPromises)).flat();
-
   // Step 2: Split images into batches
   const batches: Buffer[][] = [];
   const numBatches = Math.ceil(images.length / batchSize);
@@ -208,7 +207,7 @@ const toHash = async (results: AiResponse[]) => {
 }
 
 const generateArray = (start: number, end: number) => {
-  return Array.from({ length: end - start }, (_, index) => start + index);
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index);
 };
 
 // Parallell File Processing
